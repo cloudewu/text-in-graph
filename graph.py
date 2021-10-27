@@ -1,35 +1,43 @@
-import re
 import networkx as nx
 import matplotlib.pyplot as plt
+
+from spacy import load
+from itertools import chain
 from collections import Counter
 
-STOPWORDS = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
+PUNC = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~“”'
+STOPWORD = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
+
+model = load('en_core_web_sm')
 
 def ngram(tokens, n=2):
-    return [' '.join(tokens[i:i+n]) for i in range(len(tokens)-n-1)]
+    return [' '.join(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
 
-def preprocess_document(document):
+def preprocess_document(document, stopwords=STOPWORD, punc=PUNC):
     """
-    1. splitted by spaces and punctuations
-    2. punctuations are all removed
-    3. stop words are removed (https://gist.github.com/sebleier/554280)
+    1. tokenized with spacy model
+    2. punctuations are removed if punc is specified
+    3. stopwords are removed if stopwords is specified
     """
-    document = document.lower()
-    document = re.findall(r'\w+', document)
-    document = list(filter(lambda token: token not in STOPWORDS, document))
-    return document
+    def useful(word): return word.strip() and word not in stopwords and word not in punc
+    
+    doc = model(document)
+    doc = [[token.text.lower() for token in sent] 
+                               for sent in doc.sents]
+    doc = [list(filter(useful, sent)) for sent in doc]
+    return doc
 
 def get_entities(document):
     """ Generate nodes on the graph, which should be all unique words """
-    unique_words = list(set(document))
+    unique_words = list(set(chain(*document)))
     return unique_words
 
 def get_relations(document, weighted=False):
     """ Generate edges on the graph, which should be all bigram connections """
-    bigrams = ngram(document, 2)
-    bigrams = Counter(bigrams)
+    bigrams = [ngram(sent, 2) for sent in document]
+    bigrams = Counter(chain(*bigrams))
     if not weighted:
-        return [ gram.split(' ')  for gram in bigrams ]
+        return [ gram.split(' ') for gram in bigrams ]
     return [ [*gram.split(' '), count] for gram, count in bigrams.items() ]
 
 def build_graph(doc, directed = False, weighted = False):
@@ -48,7 +56,7 @@ def build_graph(doc, directed = False, weighted = False):
     
     return G
 
-def plot_graph(G, title=None):
+def plot_graph(G, title=None, highlight=None):
     """ 
     Display graph on the notebook. 
     Some errors may come up in `nx.draw_networkx_edge_labels`;
@@ -63,7 +71,11 @@ def plot_graph(G, title=None):
     pos = nx.nx_agraph.graphviz_layout(G)
     
     # draw nodes and edges
-    nx.draw(G, pos=pos, with_labels=True)
+    nx.draw(G, pos=pos, with_labels=True, node_size=200, node_color='#6495ed')
+    
+    # draw highlighted nodes
+    if highlight:
+        nx.draw_networkx_nodes(G, pos=pos, nodelist=highlight, node_size=250, node_color='#90ee90')
     
     # get edge labels (if any)
     edge_labels = nx.get_edge_attributes(G, 'weight')
@@ -93,6 +105,7 @@ if __name__ == '__main__':
         parser = ArgumentParser()
         parser.add_argument('file', help='input document file')
         parser.add_argument('-s', '--stop-words', help='file containing a list of stop words')
+        parser.add_argument('-p', '--punctuations', type=str, help='punctuation list')
         return parser.parse_args()
     args = parse_args()
 
@@ -107,16 +120,19 @@ if __name__ == '__main__':
 
 
     # PREPARATIONS
+    if args.punctuations:
+        PUNC = args.punctuations
+
     if args.stop_words:
         with open(args.stop_words, 'r') as f:
-            STOPWORDS = f.read().split()
+            STOPWORD = f.read().split()
 
     with open(args.file, 'r') as f:
         document = f.read() 
 
 
     # MAIN
-    G = build_graph(document)
+    G = build_graph(document, directed = True)
     node_scores = nx.betweenness_centrality(G)
     print_highest(node_scores, 20)
 
