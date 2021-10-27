@@ -1,0 +1,9 @@
+data
+*.tmp
+
+.ipynb_checkpoints/
+__pycache__/
+
+.env/
+activate
+.vscode/
