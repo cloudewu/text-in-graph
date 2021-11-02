@@ -7,6 +7,7 @@ def ensure_exist(path):
     try:
         if not os.path.isdir(path):
             os.makedirs(path)
+            print(f'folder {path} created')
     except:
         return False
     return True
@@ -88,8 +89,7 @@ if __name__ == '__main__':
         'strategy': args.strategy,
         'max': args.maximum,
     }
-    if ensure_exist(CONFIG['dir']): 
-        print(f"folder {CONFIG['dir']} created")
+    ensure_exist(CONFIG['dir'])
 
     # MAIN
     with open(args.file, 'r') as f:
