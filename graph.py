@@ -56,7 +56,7 @@ def build_graph(doc, directed = False, weighted = False):
     
     return G
 
-def plot_graph(G, title=None, highlight=None):
+def plot_graph(G, title=None, highlight=None, show=True, save=None):
     """ 
     Display graph on the notebook. 
     Some errors may come up in `nx.draw_networkx_edge_labels`;
@@ -86,7 +86,12 @@ def plot_graph(G, title=None, highlight=None):
     # plot the title (if any)
     plt.title(title)
     
-    plt.show()
+
+    if save != None:
+        plt.savefig(save)
+    if show:
+        plt.show()
+    
     return
 
 def print_highest(scores: dict, n=10):
