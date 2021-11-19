@@ -31,19 +31,11 @@ def get_keyphrase(document:list, keywords:list):
                 keyphrases[-1].append(token)
                 pre_keyword = True
             elif pre_keyword:
-                last = keyphrases[-1]
-                if len(last) > 1:
-                    keyphrases[-1] = ' '.join(last)
-                    keyphrases.append([])
-                else:
-                    keyphrases[-1].pop()
+                keyphrases[-1] = ' '.join(keyphrases[-1])
+                keyphrases.append([])
                 pre_keyword = False
     
     keyphrases = list(set(keyphrases[:-1]))
-    for keyword in keywords:
-        if any([keyword in phrase for phrase in keyphrases]):
-            continue
-        keyphrases.append(keyword)
     return keyphrases
 
 def save_keyphrases(keyphrases: list, strategy: str, CONFIG: dict):

@@ -8,22 +8,22 @@ from collections import Counter
 PUNC = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~“”'
 STOPWORD = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
 
-model = load('en_core_web_sm')
+model = load('en_core_web_sm', disabled=['ner'])
 
 def ngram(tokens, n=2):
     return [' '.join(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
 
 def preprocess_document(document, stopwords=STOPWORD, punc=PUNC):
     """
-    1. tokenized with spacy model
+    1. tokenized & lemmatize with spacy model
     2. punctuations are removed if punc is specified
     3. stopwords are removed if stopwords is specified
     """
     def useful(word): return word.strip() and word not in stopwords and word not in punc
     
     doc = model(document)
-    doc = [[token.text.lower() for token in sent] 
-                               for sent in doc.sents]
+    doc = [[token.lemma_ for token in sent]
+                         for sent in doc.sents]
     doc = [list(filter(useful, sent)) for sent in doc]
     return doc
 
