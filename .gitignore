@@ -1,7 +1,6 @@
 data
 *.tmp
-output/
-out/
+out*/
 
 .ipynb_checkpoints/
 __pycache__/
